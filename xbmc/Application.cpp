@@ -19,6 +19,9 @@
  *
  */
 
+//spotify
+#include "music/spotyXBMC/Addon.music.spotify.h"
+
 #include "threads/SystemClock.h"
 #include "system.h"
 #include "Application.h"
@@ -317,6 +320,7 @@
 #ifdef HAS_IRSERVERSUITE
   #include "input/windows/IRServerSuite.h"
 #endif
+
 
 using namespace std;
 using namespace ADDON;
@@ -1224,6 +1228,9 @@ bool CApplication::Initialize()
   else
     g_windowManager.ActivateWindow(g_SkinInfo->GetFirstWindow());
 
+  //spotify
+  g_spotify = new Addon_music_spotify();
+
   g_sysinfo.Refresh();
 
   CLog::Log(LOGINFO, "removing tempfiles");
@@ -1270,6 +1277,7 @@ bool CApplication::Initialize()
 
   // reset our screensaver (starts timers etc.)
   ResetScreenSaver();
+
   return true;
 }
 
@@ -3154,6 +3162,10 @@ bool CApplication::Cleanup()
 {
   try
   {
+    //spotify
+    if (g_spotify)
+      g_spotify->enable(false);
+      //delete g_spotify;
     g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
     g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
     g_windowManager.Delete(WINDOW_MUSIC_FILES);
@@ -3749,6 +3761,8 @@ bool CApplication::PlayFile(const CFileItem& item, bool bRestart)
         CStdString path = item.GetPath();
         if (item.IsDVD()) 
           path = item.GetVideoInfoTag()->m_strFileNameAndPath;
+        if (item.HasProperty("original_listitem_url") && URIUtils::IsPlugin(item.GetProperty("original_listitem_url").asString()))
+          path = item.GetProperty("original_listitem_url").asString();
         if(dbs.GetResumeBookMark(path, bookmark))
         {
           options.starttime = bookmark.timeInSeconds;
